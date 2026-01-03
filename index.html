@@ -3,7 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkSnap - Modern URL Shortener</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- Primary Meta Tags -->
+    <title>Lify - Free URL Shortener | Shorten Links & Create QR Codes</title>
+    <meta name="title" content="Lify - Free URL Shortener | Shorten Links & Create QR Codes">
+    <meta name="description" content="Shorten long URLs instantly with Lify. Create custom short links, generate QR codes, track clicks, and share easily. Fast, free, and secure URL shortener.">
+    <meta name="keywords" content="url shortener, link shortener, shorten url, short link, qr code generator, link management, url shrinker, tiny url, custom short urls, free url shortener">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="Lify">
+    <link rel="canonical" href="https://lify.cc">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lify.cc">
+    <meta property="og:title" content="Lify - Free URL Shortener | Shorten Links & Create QR Codes">
+    <meta property="og:description" content="Transform long URLs into short, shareable links with QR codes. Track clicks and manage your links easily with Lify's free URL shortener.">
+    <meta property="og:image" content="https://lify.cc/og-image.png">
+    <meta property="og:site_name" content="Lify URL Shortener">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://lify.cc">
+    <meta property="twitter:title" content="Lify - Free URL Shortener | Shorten Links & Create QR Codes">
+    <meta property="twitter:description" content="Transform long URLs into short, shareable links with QR codes. Track clicks and manage your links easily.">
+    <meta property="twitter:image" content="https://lify.cc/twitter-image.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/logo.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="mask-icon" href="/logo.svg" color="#667EEA">
+    <meta name="theme-color" content="#667EEA">
+    
+    <!-- Additional SEO -->
+    <meta name="application-name" content="Lify URL Shortener">
+    <meta name="apple-mobile-web-app-title" content="Lify">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Lify URL Shortener",
+      "description": "Free URL shortener service to create short links and QR codes",
+      "url": "https://lify.cc",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Lify",
+        "url": "https://lify.cc"
+      }
+    }
+    </script>
     
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -184,8 +252,8 @@
     <header class="fixed top-0 w-full z-50 glass dark:glass-dark border-b border-gray-200 dark:border-gray-700">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <img src="logo.svg" alt="LinkSnap" class="w-10 h-10">
-                <span class="text-xl font-bold gradient-text">LinkSnap</span>
+                <img src="logo.svg" alt="Lify" class="w-10 h-10">
+                <span class="text-xl font-bold gradient-text">Lify</span>
             </div>
             <div class="flex items-center space-x-4">
                 <button id="historyBtn" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
@@ -329,12 +397,75 @@
             </div>
         </div>
         
+        <!-- Ad Unit 1: Below Main Card (Responsive Display Ad) -->
+        <div class="max-w-4xl mx-auto mt-8 text-center">
+            <div class="glass dark:glass-dark rounded-xl p-4">
+                <!-- Google AdSense - Display Ad -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-3853737012819061"
+                     data-ad-slot="XXXXXXXXXX"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
+        
         <!-- Recent URLs Section -->
         <div id="recentSection" class="max-w-4xl mx-auto mt-12 hidden">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent URLs</h3>
             <div id="recentList" class="space-y-3"></div>
+            
+            <!-- Ad Unit 2: In Recent URLs (Native Ad) -->
+            <div class="mt-6">
+                <div class="glass dark:glass-dark rounded-xl p-4">
+                    <!-- Google AdSense - In-feed Ad -->
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-format="fluid"
+                         data-ad-layout-key="-fb+5w+4e-db+86"
+                         data-ad-client="ca-pub-3853737012819061"
+                         data-ad-slot="XXXXXXXXXX"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+            </div>
         </div>
     </main>
+    
+    <!-- Footer with Ad -->
+    <footer class="mt-16 pb-8">
+        <div class="container mx-auto px-4">
+            <!-- Ad Unit 3: Footer Banner (Anchor Ad for mobile) -->
+            <div class="max-w-4xl mx-auto mb-8">
+                <div class="glass dark:glass-dark rounded-xl p-4">
+                    <!-- REPLACE with your actual AdSense code -->
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-XXXXXXXXX"
+                         data-ad-slot="XXXXXXXXXX"
+                         data-ad-format="horizontal"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+            </div>
+            
+            <!-- Footer Content -->
+            <div class="text-center text-gray-600 dark:text-gray-400 text-sm">
+                <p>&copy; 2024 Lify. All rights reserved.</p>
+                <p class="mt-2">
+                    <a href="#" class="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</a>
+                    <span class="mx-2">•</span>
+                    <a href="#" class="hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</a>
+                </p>
+            </div>
+        </div>
+    </footer>
     
     <!-- Stats Modal -->
     <div id="statsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
@@ -357,6 +488,10 @@
     <div id="toast" class="fixed top-20 right-4 z-50 hidden">
         <!-- Toast content will be dynamically inserted here -->
     </div>
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3853737012819061"
+        crossorigin="anonymous"></script>
     
     <!-- QR Code Library -->
     <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>

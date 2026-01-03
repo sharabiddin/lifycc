@@ -25,7 +25,7 @@ jobs:
           
           # Create deployment archive
           tar -czf deploy.tar.gz \
-            index.html app.js logo.svg \
+            index.html app.js logo.svg sitemap.xml \
             Dockerfile nginx-simple.conf \
             docker-compose.yml Caddyfile
           
