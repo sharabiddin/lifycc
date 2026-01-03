@@ -16,11 +16,7 @@ COPY index.html /usr/share/nginx/html/
 COPY app.js /usr/share/nginx/html/
 COPY logo.svg /usr/share/nginx/html/
 
-# Create non-root user
-RUN addgroup -g 101 -S nginx && \
-    adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
-
-# Set ownership
+# Set ownership (nginx user already exists in nginx:alpine)
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
