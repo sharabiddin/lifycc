@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkSnap - Modern URL Shortener</title>
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'gradient': 'gradient 8s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-primary': 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+                        'gradient-mesh': 'radial-gradient(at 40% 20%, #667EEA 0px, transparent 50%), radial-gradient(at 80% 0%, #764BA2 0px, transparent 50%), radial-gradient(at 40% 80%, #F472B6 0px, transparent 50%)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .glass-dark {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-input {
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(203, 213, 225, 0.6);
+            border-radius: 12px;
+        }
+        
+        .dark .glass-input {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+        }
+        
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.05);
+        }
+        
+        .dark .glass-input:focus {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        .dark .shimmer {
+            background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        input:focus {
+            outline: none;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .mesh-gradient {
+            background-image: radial-gradient(at 40% 20%, rgba(102, 126, 234, 0.1) 0px, transparent 50%),
+                              radial-gradient(at 80% 0%, rgba(118, 75, 162, 0.1) 0px, transparent 50%),
+                              radial-gradient(at 40% 80%, rgba(244, 114, 182, 0.1) 0px, transparent 50%);
+        }
+        
+        .dark .mesh-gradient {
+            background-image: radial-gradient(at 40% 20%, rgba(102, 126, 234, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 80% 0%, rgba(118, 75, 162, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 40% 80%, rgba(244, 114, 182, 0.05) 0px, transparent 50%);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Background Mesh -->
+    <div class="fixed inset-0 mesh-gradient"></div>
+    
+    <!-- Header -->
+    <header class="fixed top-0 w-full z-50 glass dark:glass-dark border-b border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="logo.svg" alt="LinkSnap" class="w-10 h-10">
+                <span class="text-xl font-bold gradient-text">LinkSnap</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="historyBtn" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pt-24 pb-12 relative z-10">
+        <!-- Hero Section -->
+        <div class="text-center mb-12 fade-in">
+            <h1 class="text-5xl md:text-6xl font-bold mb-4 text-gray-900 dark:text-white">
+                Shorten Your Links,<br>
+                <span class="gradient-text">Amplify Your Reach</span>
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Transform long URLs into short, shareable links with QR codes and detailed analytics
+            </p>
+        </div>
+        
+        <!-- URL Shortener Card -->
+        <div class="max-w-4xl mx-auto">
+            <div class="glass dark:glass-dark rounded-2xl p-8 md:p-12 fade-in">
+                <!-- Input Section -->
+                <div id="inputSection">
+                    <form id="shortenForm" class="space-y-6">
+                        <div>
+                            <input
+                                type="text"
+                                id="urlInput"
+                                placeholder="Paste your long URL here..."
+                                class="w-full px-6 py-4 glass-input text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-lg transition-all outline-none"
+                            >
+                        </div>
+                        <button
+                            type="submit"
+                            id="shortenBtn"
+                            class="w-full bg-gradient-primary text-white font-semibold py-4 px-8 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center space-x-2"
+                        >
+                            <span>Shorten URL</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Success Section (Hidden by default) -->
+                <div id="successSection" class="hidden">
+                    <div class="text-center mb-8">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
+                            <svg class="w-8 h-8 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">URL Shortened Successfully!</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Your link is ready to share</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Short URL Display -->
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+                                <label class="text-sm text-gray-600 dark:text-gray-400 mb-2 block">Short URL</label>
+                                <div class="flex items-center space-x-2">
+                                    <input
+                                        type="text"
+                                        id="shortUrlDisplay"
+                                        readonly
+                                        class="flex-1 bg-transparent text-gray-900 dark:text-white font-mono text-sm"
+                                    >
+                                    <button
+                                        id="copyBtn"
+                                        class="p-2 bg-gradient-primary text-white rounded-lg hover:shadow-md transition-all"
+                                        title="Copy to clipboard"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+                                <label class="text-sm text-gray-600 dark:text-gray-400 mb-2 block">Original URL</label>
+                                <p id="originalUrlDisplay" class="text-gray-900 dark:text-white text-sm truncate"></p>
+                            </div>
+                            
+                            <div class="flex space-x-3">
+                                <button
+                                    id="statsBtn"
+                                    class="flex-1 bg-gray-100 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors"
+                                >
+                                    View Stats
+                                </button>
+                                <button
+                                    id="newUrlBtn"
+                                    class="flex-1 bg-gradient-primary text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all"
+                                >
+                                    Shorten Another
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- QR Code Display -->
+                        <div class="flex flex-col items-center justify-center">
+                            <div id="qrcode" class="bg-white dark:bg-gray-100 p-4 rounded-xl"></div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">Scan to visit URL</p>
+                            <button
+                                id="downloadQRBtn"
+                                class="mt-4 bg-gradient-primary text-white font-medium py-2 px-6 rounded-lg hover:shadow-md transition-all flex items-center space-x-2"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                <span>Download QR</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loadingSection" class="hidden">
+                    <div class="flex flex-col items-center justify-center py-12">
+                        <div class="loading-spinner mb-4"></div>
+                        <p class="text-gray-600 dark:text-gray-400">Shortening your URL...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent URLs Section -->
+        <div id="recentSection" class="max-w-4xl mx-auto mt-12 hidden">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent URLs</h3>
+            <div id="recentList" class="space-y-3"></div>
+        </div>
+    </main>
+    
+    <!-- Stats Modal -->
+    <div id="statsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="glass dark:glass-dark rounded-2xl max-w-lg w-full p-6 relative">
+            <button id="closeStatsBtn" class="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">URL Statistics</h3>
+            
+            <div id="statsContent" class="space-y-4">
+                <!-- Stats will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 right-4 z-50 hidden">
+        <!-- Toast content will be dynamically inserted here -->
+    </div>
+    
+    <!-- QR Code Library -->
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <!-- Main JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

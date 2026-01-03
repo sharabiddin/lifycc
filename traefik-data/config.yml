@@ -1,0 +1,63 @@
+http:
+  middlewares:
+    # Rate limiting middleware
+    rate-limit:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 50
+    
+    # Security headers middleware
+    security-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        frameDeny: true
+        sslRedirect: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Robots-Tag: "all"
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "SAMEORIGIN"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
+          Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self';"
+    
+    # Compression middleware
+    compress:
+      compress:
+        excludedContentTypes:
+          - text/event-stream
+    
+    # Chain multiple middlewares
+    secured:
+      chain:
+        middlewares:
+          - rate-limit
+          - security-headers
+          - compress
+
+  routers:
+    # Additional routers can be defined here
+
+  services:
+    # Additional services can be defined here
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+      sniStrict: true

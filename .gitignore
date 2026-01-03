@@ -1,0 +1,61 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Traefik data
+traefik-data/acme.json
+traefik-data/logs/
+traefik-data/*.log
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.cer
+
+# Backup files
+*.backup
+*.bak
+*.old
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build files
+dist/
+build/
+*.pid
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Security
+secrets/
+private/
+*.private

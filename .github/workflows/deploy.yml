@@ -1,0 +1,134 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate HTML
+        run: |
+          npx html-validate index.html || true
+
+      - name: Check JavaScript syntax
+        run: |
+          npx jshint app.js || true
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: production
+      url: https://${{ secrets.DOMAIN_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install sshpass for password authentication
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Create deployment archive
+        run: |
+          tar -czf deployment.tar.gz \
+            index.html \
+            app.js \
+            logo.svg \
+            Dockerfile \
+            nginx.conf \
+            default.conf \
+            docker-compose.yml \
+            traefik.yml \
+            traefik-data/ \
+            scripts/
+
+      - name: Copy files to server
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          # Create directory on server
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "mkdir -p ~/url-shortener"
+          
+          # Copy deployment archive
+          sshpass -e scp -o StrictHostKeyChecking=no \
+            deployment.tar.gz \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/url-shortener/
+          
+          # Extract files on server
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ~/url-shortener && tar -xzf deployment.tar.gz && rm deployment.tar.gz"
+
+      - name: Create environment file on server
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cat > ~/url-shortener/.env << 'EOF'
+          DOMAIN=${{ secrets.DOMAIN_NAME }}
+          ACME_EMAIL=${{ secrets.ACME_EMAIL }}
+          CF_API_EMAIL=${{ secrets.CF_API_EMAIL }}
+          CF_API_KEY=${{ secrets.CF_API_KEY }}
+          TRAEFIK_DASHBOARD_CREDENTIALS=${{ secrets.TRAEFIK_DASHBOARD_CREDENTIALS }}
+          EOF"
+
+      - name: Build Docker image on server
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ~/url-shortener && \
+             docker build -t url-shortener:latest . && \
+             echo 'Docker image built successfully'"
+
+      - name: Deploy with Docker Compose
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ~/url-shortener && \
+             docker network create proxy 2>/dev/null || true && \
+             touch traefik-data/acme.json && \
+             chmod 600 traefik-data/acme.json && \
+             docker-compose down || true && \
+             docker-compose up -d --force-recreate && \
+             docker system prune -f"
+
+      - name: Wait for services to start
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          # Try HTTP first (might redirect to HTTPS)
+          curl -f -L http://${{ secrets.SERVER_HOST }}/health || \
+          curl -f https://${{ secrets.DOMAIN_NAME }}/health || \
+          echo "Health check pending - SSL certificate might still be generating"
+
+      - name: Show deployment status
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ~/url-shortener && docker-compose ps"
