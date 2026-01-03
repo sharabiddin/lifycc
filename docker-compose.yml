@@ -1,79 +1,38 @@
 version: '3.8'
 
 services:
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik
+  caddy:
+    image: caddy:alpine
+    container_name: caddy
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    networks:
-      - proxy
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - CF_API_EMAIL=${CF_API_EMAIL}
-      - CF_API_KEY=${CF_API_KEY}
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/traefik.yml:ro
-      - ./traefik-data/acme.json:/acme.json
-      - ./traefik-data/config.yml:/config.yml:ro
-      - ./traefik-data/logs:/logs
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=http"
-      - "traefik.http.routers.traefik.rule=Host(`traefik-dashboard.${DOMAIN}`)"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
-      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
-      - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik-dashboard.${DOMAIN}`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
-      - "traefik.http.routers.traefik-secure.tls=true"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOMAIN}"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
 
   url-shortener:
-    image: url-shortener:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: url-shortener
     restart: unless-stopped
+    expose:
+      - "80"
     networks:
-      - proxy
-    environment:
-      - NODE_ENV=production
-    labels:
-      - "traefik.enable=true"
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.url-shortener.entrypoints=http"
-      - "traefik.http.routers.url-shortener.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
-      - "traefik.http.middlewares.url-shortener-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.url-shortener.middlewares=url-shortener-https-redirect"
-      # HTTPS configuration
-      - "traefik.http.routers.url-shortener-secure.entrypoints=https"
-      - "traefik.http.routers.url-shortener-secure.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
-      - "traefik.http.routers.url-shortener-secure.tls=true"
-      - "traefik.http.routers.url-shortener-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.url-shortener-secure.service=url-shortener"
-      # Middlewares
-      - "traefik.http.routers.url-shortener-secure.middlewares=rate-limit@file,security-headers@file,compress@file"
-      # Service
-      - "traefik.http.services.url-shortener.loadbalancer.server.port=80"
-      - "traefik.http.services.url-shortener.loadbalancer.server.scheme=http"
-      - "traefik.http.services.url-shortener.loadbalancer.passhostheader=true"
-      # Health check
-      - "traefik.http.services.url-shortener.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.url-shortener.loadbalancer.healthcheck.interval=30s"
-      - "traefik.http.services.url-shortener.loadbalancer.healthcheck.timeout=3s"
+      - web
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
-  proxy:
-    external: true
+  web:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

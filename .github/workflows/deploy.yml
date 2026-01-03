@@ -5,160 +5,69 @@ on:
     branches:
       - main
       - master
-  pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Test Application
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Validate HTML
-        run: |
-          npx html-validate index.html || true
-
-      - name: Check JavaScript syntax
-        run: |
-          npx jshint app.js || true
-
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment:
-      name: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install sshpass for password authentication
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sshpass
-
-      - name: Create deployment archive
-        run: |
-          tar -czf deployment.tar.gz \
-            index.html \
-            app.js \
-            logo.svg \
-            Dockerfile \
-            nginx.conf \
-            default.conf \
-            docker-compose.yml \
-            traefik.yml \
-            traefik-data/ \
-            scripts/
-
-      - name: Copy files to server
+      - name: Deploy to server
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         run: |
-          # Create directory on server
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "mkdir -p ~/url-shortener"
+          # Install sshpass
+          sudo apt-get update && sudo apt-get install -y sshpass
           
-          # Copy deployment archive
+          # Create deployment archive
+          tar -czf deploy.tar.gz \
+            index.html app.js logo.svg \
+            Dockerfile nginx-simple.conf \
+            docker-compose.yml Caddyfile
+          
+          # Copy to server
           sshpass -e scp -o StrictHostKeyChecking=no \
-            deployment.tar.gz \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/url-shortener/
+            deploy.tar.gz \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/
           
-          # Extract files on server
+          # Deploy on server
           sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ~/url-shortener && tar -xzf deployment.tar.gz && rm deployment.tar.gz"
-
-      - name: Install Docker and dependencies on server
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "if ! command -v docker &> /dev/null; then
-              echo 'Installing Docker...'
-              curl -fsSL https://get.docker.com | sh
-              sudo usermod -aG docker ${{ secrets.SERVER_USER }} || true
-              sudo systemctl start docker
-              sudo systemctl enable docker
-            else
-              echo 'Docker already installed'
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            # Extract files
+            mkdir -p ~/url-shortener
+            cd ~/url-shortener
+            tar -xzf ~/deploy.tar.gz
+            rm ~/deploy.tar.gz
+            
+            # Update domain in Caddyfile if provided
+            if [ ! -z "${{ secrets.DOMAIN_NAME }}" ]; then
+              sed -i "s/lify.cc/${{ secrets.DOMAIN_NAME }}/g" Caddyfile
             fi
             
-            if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-              echo 'Installing Docker Compose...'
-              sudo apt-get update
-              sudo apt-get install -y docker-compose-plugin docker-compose || true
-              if ! command -v docker-compose &> /dev/null; then
-                sudo curl -L \"https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-Linux-x86_64\" -o /usr/local/bin/docker-compose
-                sudo chmod +x /usr/local/bin/docker-compose
-              fi
-            else
-              echo 'Docker Compose already installed'
+            # Install Docker if needed
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com | sh
+              sudo usermod -aG docker $USER
             fi
-            echo 'Testing Docker Compose...'
-            docker compose version || docker-compose --version || echo 'Docker Compose may require new shell session'"
-
-      - name: Create environment file on server
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cat > ~/url-shortener/.env << 'EOF'
-          DOMAIN=${{ secrets.DOMAIN_NAME }}
-          ACME_EMAIL=${{ secrets.ACME_EMAIL }}
-          CF_API_EMAIL=${{ secrets.CF_API_EMAIL }}
-          CF_API_KEY=${{ secrets.CF_API_KEY }}
-          TRAEFIK_DASHBOARD_CREDENTIALS=${{ secrets.TRAEFIK_DASHBOARD_CREDENTIALS }}
-          EOF"
-
-      - name: Build Docker image on server
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ~/url-shortener && \
-             (docker build -t url-shortener:latest . || sudo docker build -t url-shortener:latest .) && \
-             echo 'Docker image built successfully'"
-
-      - name: Deploy with Docker Compose
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ~/url-shortener && \
-             (docker network create proxy 2>/dev/null || sudo docker network create proxy 2>/dev/null || true) && \
-             mkdir -p traefik-data && \
-             touch traefik-data/acme.json && \
-             chmod 600 traefik-data/acme.json && \
-             (docker compose down 2>/dev/null || docker-compose down 2>/dev/null || sudo docker compose down 2>/dev/null || sudo docker-compose down 2>/dev/null || true) && \
-             (docker compose up -d --force-recreate || docker-compose up -d --force-recreate || sudo docker compose up -d --force-recreate || sudo docker-compose up -d --force-recreate) && \
-             (docker system prune -f || sudo docker system prune -f)"
-
-      - name: Wait for services to start
-        run: sleep 30
-
-      - name: Health check
-        run: |
-          # Try HTTP first (might redirect to HTTPS)
-          curl -f -L http://${{ secrets.SERVER_HOST }}/health || \
-          curl -f https://${{ secrets.DOMAIN_NAME }}/health || \
-          echo "Health check pending - SSL certificate might still be generating"
-
-      - name: Show deployment status
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ~/url-shortener && (docker compose ps || docker-compose ps || sudo docker compose ps || sudo docker-compose ps)"
+            
+            # Install Docker Compose if needed
+            if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y docker-compose-plugin
+            fi
+            
+            # Stop old containers
+            docker compose down 2>/dev/null || true
+            
+            # Build and start
+            docker compose build --no-cache
+            docker compose up -d
+            
+            # Show status
+            sleep 5
+            docker compose ps
+            docker compose logs --tail=20
+          EOF

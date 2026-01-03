@@ -1,0 +1,29 @@
+lify.cc {
+    # Automatic HTTPS with Let's Encrypt
+    tls admin@lify.cc
+    
+    # Reverse proxy to url-shortener container
+    reverse_proxy url-shortener:80
+    
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+    
+    # Compression
+    encode gzip
+    
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}
+
+www.lify.cc {
+    redir https://lify.cc{uri} permanent
+}
