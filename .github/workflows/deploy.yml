@@ -76,6 +76,32 @@ jobs:
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "cd ~/url-shortener && tar -xzf deployment.tar.gz && rm deployment.tar.gz"
 
+      - name: Install Docker and dependencies on server
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "if ! command -v docker &> /dev/null; then
+              echo 'Installing Docker...'
+              curl -fsSL https://get.docker.com | sh
+              sudo usermod -aG docker ${{ secrets.SERVER_USER }} || true
+              sudo systemctl start docker
+              sudo systemctl enable docker
+            else
+              echo 'Docker already installed'
+            fi
+            
+            if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+              echo 'Installing Docker Compose...'
+              sudo apt-get update
+              sudo apt-get install -y docker-compose-plugin || \
+              sudo curl -L 'https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose || true
+            else
+              echo 'Docker Compose already installed'
+            fi"
+
       - name: Create environment file on server
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
@@ -97,7 +123,7 @@ jobs:
           sshpass -e ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "cd ~/url-shortener && \
-             docker build -t url-shortener:latest . && \
+             (docker build -t url-shortener:latest . || sudo docker build -t url-shortener:latest .) && \
              echo 'Docker image built successfully'"
 
       - name: Deploy with Docker Compose
@@ -107,12 +133,13 @@ jobs:
           sshpass -e ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "cd ~/url-shortener && \
-             docker network create proxy 2>/dev/null || true && \
+             (docker network create proxy 2>/dev/null || sudo docker network create proxy 2>/dev/null || true) && \
+             mkdir -p traefik-data && \
              touch traefik-data/acme.json && \
              chmod 600 traefik-data/acme.json && \
-             docker-compose down || true && \
-             docker-compose up -d --force-recreate && \
-             docker system prune -f"
+             (docker-compose down 2>/dev/null || sudo docker-compose down 2>/dev/null || true) && \
+             (docker-compose up -d --force-recreate || sudo docker-compose up -d --force-recreate) && \
+             (docker system prune -f || sudo docker system prune -f)"
 
       - name: Wait for services to start
         run: sleep 30
@@ -130,4 +157,4 @@ jobs:
         run: |
           sshpass -e ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ~/url-shortener && docker-compose ps"
+            "cd ~/url-shortener && (docker-compose ps || sudo docker-compose ps)"
