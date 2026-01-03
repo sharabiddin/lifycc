@@ -23,8 +23,7 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
 
-# Security: Remove server tokens
-RUN sed -i 's/nginx/Server/g' /etc/nginx/nginx.conf
+# Security: Hide nginx version (removed - causing issues)
 
 # Expose port 80 (Traefik will handle SSL)
 EXPOSE 80
