@@ -29,7 +29,7 @@ class API {
             
             const urlData = {
                 code,
-                shortUrl: `${this.baseUrl}/s/${code}`,
+                shortUrl: `${this.baseUrl}/${code}`,
                 original: url,
                 clickCount: 0,
                 expirationDate: expirationDate.toISOString(),
@@ -55,7 +55,7 @@ class API {
             const data = await response.json();
             return {
                 code: data.code,
-                shortUrl: `${this.baseUrl}/s/${data.code}`,
+                shortUrl: `${this.baseUrl}/${data.code}`,
                 original: url,
                 clickCount: data.clicks || 0,
                 createdAt: data.createdAt
@@ -78,7 +78,7 @@ class API {
             const data = await response.json();
             return {
                 code: data.code,
-                shortUrl: `${this.baseUrl}/s/${data.code}`,
+                shortUrl: `${this.baseUrl}/${data.code}`,
                 original: data.original,
                 clickCount: data.clickCount || 0,
                 createdAt: data.createdAt,

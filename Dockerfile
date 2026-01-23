@@ -5,6 +5,7 @@ FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/
 COPY app.js /usr/share/nginx/html/
 COPY logo.svg /usr/share/nginx/html/
+COPY ads.txt /usr/share/nginx/html/
 
 # Copy nginx config
 COPY nginx-simple.conf /etc/nginx/conf.d/default.conf
