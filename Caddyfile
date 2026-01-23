@@ -9,7 +9,8 @@ lify.cc {
     
     # Short URL redirects to backend
     handle /s/* {
-        reverse_proxy backend:8080
+        uri strip_prefix /s
+        reverse_proxy backend:8080/api/v1
     }
     
     # Everything else to frontend

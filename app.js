@@ -2,9 +2,9 @@
 class API {
     constructor() {
         this.baseUrl = window.location.origin;
-        this.apiUrl = '/api';
-        // Fallback to mock if API is not available
-        this.useMock = true; // Start with mock, will switch when backend is ready
+        this.apiUrl = '/api/v1';
+        // Use real backend API
+        this.useMock = false;
         this.urls = JSON.parse(localStorage.getItem('shortUrls') || '{}');
     }
     

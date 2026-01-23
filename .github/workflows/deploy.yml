@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Deploy to server
         env:
@@ -27,7 +29,8 @@ jobs:
           tar -czf deploy.tar.gz \
             index.html app.js logo.svg sitemap.xml \
             Dockerfile nginx-simple.conf \
-            docker-compose.yml Caddyfile
+            docker-compose.yml Caddyfile \
+            backend/
           
           # Copy to server
           sshpass -e scp -o StrictHostKeyChecking=no \
