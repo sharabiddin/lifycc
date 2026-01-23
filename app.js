@@ -66,6 +66,9 @@ class API {
             this.urls[data.code] = urlData;
             localStorage.setItem('shortUrls', JSON.stringify(this.urls));
 
+            // Cleanup old URLs to keep only last 10
+            this.cleanupOldUrls();
+
             return urlData;
         } catch (error) {
             console.error('API error, falling back to mock:', error);
@@ -106,6 +109,41 @@ class API {
         return Object.values(this.urls)
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .slice(0, 10); // Show up to 10 recent URLs
+    }
+
+    async fetchRecentUrlsStats() {
+        const recentCodes = this.getRecentUrls().map(url => url.code);
+
+        // Fetch real stats for each URL from backend
+        for (const code of recentCodes) {
+            try {
+                const stats = await this.getStats(code);
+                // Update localStorage with real stats
+                if (this.urls[code]) {
+                    this.urls[code].clickCount = stats.clickCount;
+                }
+            } catch (error) {
+                console.error(`Failed to fetch stats for ${code}:`, error);
+            }
+        }
+
+        // Save updated stats to localStorage
+        localStorage.setItem('shortUrls', JSON.stringify(this.urls));
+    }
+
+    cleanupOldUrls() {
+        const allUrls = Object.values(this.urls)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Keep only the last 10 URLs
+        if (allUrls.length > 10) {
+            const urlsToKeep = allUrls.slice(0, 10);
+            this.urls = {};
+            urlsToKeep.forEach(url => {
+                this.urls[url.code] = url;
+            });
+            localStorage.setItem('shortUrls', JSON.stringify(this.urls));
+        }
     }
     
     deleteUrl(code) {
@@ -435,9 +473,9 @@ elements.historyBtn.addEventListener('click', () => {
 });
 
 // Update recent URLs list
-function updateRecentUrls() {
+async function updateRecentUrls() {
     const recentUrls = api.getRecentUrls();
-    
+
     if (recentUrls.length === 0) {
         elements.recentList.innerHTML = `
             <p class="text-gray-500 dark:text-gray-400 text-center py-8">No recent URLs</p>
@@ -445,13 +483,24 @@ function updateRecentUrls() {
         elements.recentSection.classList.add('hidden');
         return;
     }
-    
+
     // Show the section if there are URLs
     if (recentUrls.length > 0) {
         elements.recentSection.classList.remove('hidden');
     }
-    
-    elements.recentList.innerHTML = recentUrls.map(url => `
+
+    // Show loading state
+    elements.recentList.innerHTML = `
+        <div class="shimmer h-32 rounded-lg"></div>
+    `;
+
+    // Fetch real stats from backend
+    await api.fetchRecentUrlsStats();
+
+    // Get updated URLs with real stats
+    const updatedUrls = api.getRecentUrls();
+
+    elements.recentList.innerHTML = updatedUrls.map(url => `
         <div class="glass dark:glass-dark rounded-lg p-4 hover:shadow-md transition-all">
             <div class="flex justify-between items-start">
                 <div class="flex-1 mr-4">
