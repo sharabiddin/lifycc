@@ -49,17 +49,24 @@ class API {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url })
             });
-            
+
             if (!response.ok) throw new Error('Failed to shorten URL');
-            
+
             const data = await response.json();
-            return {
+            const urlData = {
                 code: data.code,
                 shortUrl: `${this.baseUrl}/${data.code}`,
                 original: url,
-                clickCount: data.clicks || 0,
+                clickCount: data.clickCount || 0,
+                expirationDate: data.expirationDate,
                 createdAt: data.createdAt
             };
+
+            // Save to localStorage for recent URLs history
+            this.urls[data.code] = urlData;
+            localStorage.setItem('shortUrls', JSON.stringify(this.urls));
+
+            return urlData;
         } catch (error) {
             console.error('API error, falling back to mock:', error);
             this.useMock = true;
