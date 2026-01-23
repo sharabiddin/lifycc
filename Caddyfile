@@ -1,23 +1,51 @@
-lify.cc {
-    # Automatic HTTPS with Let's Encrypt
-    tls admin@lify.cc
-    
+# Local development (no TLS)
+:80 {
     # API routes to backend
     handle /api/* {
         reverse_proxy backend:8080
     }
-    
+
     # Short URL redirects to backend
     handle /s/* {
-        uri strip_prefix /s
-        reverse_proxy backend:8080/api/v1
+        rewrite * /api/v1{path}
+        uri replace /s/ /
+        reverse_proxy backend:8080
     }
-    
+
     # Everything else to frontend
     handle {
         reverse_proxy frontend:80
     }
-    
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}
+
+# Production (with HTTPS)
+lify.cc {
+    # Automatic HTTPS with Let's Encrypt
+    tls admin@lify.cc
+
+    # API routes to backend
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+
+    # Short URL redirects to backend
+    handle /s/* {
+        rewrite * /api/v1{path}
+        uri replace /s/ /
+        reverse_proxy backend:8080
+    }
+
+    # Everything else to frontend
+    handle {
+        reverse_proxy frontend:80
+    }
+
     # Security headers
     header {
         X-Content-Type-Options "nosniff"
@@ -26,10 +54,10 @@ lify.cc {
         Referrer-Policy "strict-origin-when-cross-origin"
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     }
-    
+
     # Compression
     encode gzip
-    
+
     # Logging
     log {
         output stdout
