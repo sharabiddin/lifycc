@@ -1,8 +1,11 @@
-// Mock API implementation
-class MockAPI {
+// API implementation with backend support
+class API {
     constructor() {
-        this.urls = JSON.parse(localStorage.getItem('shortUrls') || '{}');
         this.baseUrl = window.location.origin;
+        this.apiUrl = '/api';
+        // Fallback to mock if API is not available
+        this.useMock = true; // Start with mock, will switch when backend is ready
+        this.urls = JSON.parse(localStorage.getItem('shortUrls') || '{}');
     }
     
     generateCode() {
@@ -15,27 +18,53 @@ class MockAPI {
     }
     
     async shorten(url) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        if (this.useMock) {
+            // Mock implementation for now
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            const code = this.generateCode();
+            const now = new Date();
+            const expirationDate = new Date(now);
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            
+            const urlData = {
+                code,
+                shortUrl: `${this.baseUrl}/s/${code}`,
+                original: url,
+                clickCount: 0,
+                expirationDate: expirationDate.toISOString(),
+                createdAt: now.toISOString()
+            };
+            
+            this.urls[code] = urlData;
+            localStorage.setItem('shortUrls', JSON.stringify(this.urls));
+            
+            return urlData;
+        }
         
-        const code = this.generateCode();
-        const now = new Date();
-        const expirationDate = new Date(now);
-        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-        
-        const urlData = {
-            code,
-            shortUrl: `${this.baseUrl}/${code}`,
-            original: url,
-            clickCount: 0,
-            expirationDate: expirationDate.toISOString(),
-            createdAt: now.toISOString()
-        };
-        
-        this.urls[code] = urlData;
-        localStorage.setItem('shortUrls', JSON.stringify(this.urls));
-        
-        return urlData;
+        // Real API call when backend is ready
+        try {
+            const response = await fetch(`${this.apiUrl}/shorten`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            
+            if (!response.ok) throw new Error('Failed to shorten URL');
+            
+            const data = await response.json();
+            return {
+                code: data.code,
+                shortUrl: `${this.baseUrl}/s/${data.code}`,
+                original: url,
+                clickCount: data.clicks || 0,
+                createdAt: data.createdAt
+            };
+        } catch (error) {
+            console.error('API error, falling back to mock:', error);
+            this.useMock = true;
+            return this.shorten(url);
+        }
     }
     
     async getStats(code) {
@@ -70,7 +99,7 @@ class MockAPI {
 }
 
 // Initialize API
-const api = new MockAPI();
+const api = new API();
 
 // DOM Elements
 const elements = {

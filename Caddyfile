@@ -2,8 +2,20 @@ lify.cc {
     # Automatic HTTPS with Let's Encrypt
     tls admin@lify.cc
     
-    # Reverse proxy to url-shortener container
-    reverse_proxy url-shortener:80
+    # API routes to backend
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+    
+    # Short URL redirects to backend
+    handle /s/* {
+        reverse_proxy backend:8080
+    }
+    
+    # Everything else to frontend
+    handle {
+        reverse_proxy frontend:80
+    }
     
     # Security headers
     header {
