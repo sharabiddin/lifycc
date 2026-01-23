@@ -68,18 +68,31 @@ class API {
     }
     
     async getStats(code) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const urlData = this.urls[code];
-        if (!urlData) {
-            throw new Error('URL not found');
+        try {
+            const response = await fetch(`${this.apiUrl}/${code}/stats`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch stats');
+            }
+
+            const data = await response.json();
+            return {
+                code: data.code,
+                shortUrl: `${this.baseUrl}/s/${data.code}`,
+                original: data.original,
+                clickCount: data.clickCount || 0,
+                createdAt: data.createdAt,
+                expirationDate: data.expirationDate
+            };
+        } catch (error) {
+            console.error('Stats API error:', error);
+            // Fallback to localStorage if API fails
+            const urlData = this.urls[code];
+            if (!urlData) {
+                throw new Error('URL not found');
+            }
+            return urlData;
         }
-        
-        // Simulate click count increment
-        urlData.clickCount = Math.floor(Math.random() * 100) + 1;
-        
-        return urlData;
     }
     
     getRecentUrls() {
